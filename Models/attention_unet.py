@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torchvision.models as models
 
 class AttentionGate(nn.Module):
     def __init__(self, F_g, F_l, F_int):
@@ -16,34 +17,31 @@ class AttentionGate(nn.Module):
         return x * psi
 
 class AttentionUNet(nn.Module):
-    def __init__(self, n_classes=1):
+    def __init__(self, backbone_name='vgg16', n_classes=1):
         super().__init__()
-        # Using a simple pretrained VGG-style backbone for simplicity in attention mapping
-        import torchvision.models as models
-        vgg = models.vgg16(weights='VGG16_Weights.IMAGENET1K_V1').features
+        # Fetching VGG features
+        weights = models.get_model_weights(backbone_name).DEFAULT
+        vgg = models.get_model(backbone_name, weights=weights).features
         
         self.enc1 = vgg[:4]   # 64
         self.enc2 = vgg[5:9]  # 128
         self.enc3 = vgg[10:16] # 256
         self.enc4 = vgg[17:23] # 512
 
-        self.up3 = nn.ConvTranspose2d(512, 256, 2, 2)
-        self.att3 = AttentionGate(256, 256, 128)
-        self.dec3 = nn.Conv2d(512, 256, 3, padding=1)
-        
-        self.final = nn.Sequential(nn.Conv2d(256, n_classes, 1), nn.Sigmoid())
+        self.up = nn.ConvTranspose2d(512, 256, 2, 2)
+        self.att = AttentionGate(F_g=256, F_l=256, F_int=128)
+        self.dec = nn.Sequential(nn.Conv2d(512, 256, 3, padding=1), nn.ReLU())
+        self.outc = nn.Sequential(nn.Conv2d(256, n_classes, 1), nn.Sigmoid())
 
     def forward(self, x):
-        e1 = self.enc1(x)
-        e2 = self.enc2(e1)
-        e3 = self.enc3(e2)
-        e4 = self.enc4(e3)
-
-        g3 = self.up3(e4)
-        x3 = self.att3(g=g3, x=e3)
-        d3 = self.dec3(torch.cat([g3, x3], dim=1))
-        return nn.functional.interpolate(self.final(d3), size=x.shape[2:])
+        e1, e2, e3, e4 = self.enc1(x), self.enc2(self.enc1(x)), self.enc3(self.enc2(self.enc1(x))), self.enc4(self.enc3(self.enc2(self.enc1(x))))
+        
+        g = self.up(e4)
+        x_att = self.att(g=g, x=e3)
+        d = self.dec(torch.cat([g, x_att], dim=1))
+        return nn.functional.interpolate(self.outc(d), size=x.shape[2:], mode='bilinear')
 
 if __name__ == "__main__":
-    model = AttentionUNet()
-    print("Attention-UNet Initialized.")
+    for bb in ['vgg11', 'vgg16']:
+        model = AttentionUNet(backbone_name=bb)
+        print(f"Initialized Attention-UNet with {bb}.")
