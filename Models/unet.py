@@ -75,31 +75,41 @@ class PretrainedHybridUNet(nn.Module):
 
     def forward(self, x):
         # Downward path (Pretrained)
-        s0 = self.enc0(x)      # 1/2 size
-        s1 = self.enc1(s0)     # 1/4 size
-        s2 = self.enc2(s1)     # 1/8 size
-        s3 = self.enc3(s2)     # 1/16 size
-        s4 = self.enc4(s3)     # 1/32 size
+        s0 = self.enc0(x)      # 1/2 size, 64 channels
+        s1 = self.enc1(s0)     # 1/2 size, 64 channels
+        s2 = self.enc2(s1)     # 1/4 size, 128 channels
+        s3 = self.enc3(s2)     # 1/8 size, 256 channels
+        s4 = self.enc4(s3)     # 1/16 size, 512 channels
 
         # Upward path (Custom Blocks + Skip Connections)
-        x = self.up4(s4)
+        x = self.up4(s4)       # Upsample from 1/16 to 1/8
+        x = self.resize_if_needed(x, s3)
         x = torch.cat([x, s3], dim=1)
         x = self.dec4(x)
-        
-        x = self.up3(x)
+
+        x = self.up3(x)        # Upsample from 1/8 to 1/4
+        x = self.resize_if_needed(x, s2)
         x = torch.cat([x, s2], dim=1)
         x = self.dec3(x)
-        
-        x = self.up2(x)
+
+        x = self.up2(x)        # Upsample from 1/4 to 1/2
+        x = self.resize_if_needed(x, s1)
         x = torch.cat([x, s1], dim=1)
         x = self.dec2(x)
-        
-        x = self.up1(x)
+
+        x = self.up1(x)        # Upsample from 1/2 to 1/2 (same size as s0)
+        x = self.resize_if_needed(x, s0)
         x = torch.cat([x, s0], dim=1)
         x = self.dec1(x)
-        
-        x = self.final_up(x)
+
+        x = self.final_up(x)   # Upsample to original size
         return self.outc(x)
+
+    def resize_if_needed(self, x, target):
+        """Resize x to match target's spatial dimensions if needed."""
+        if x.shape[2:] != target.shape[2:]:
+            x = F.interpolate(x, size=target.shape[2:], mode='bilinear', align_corners=False)
+        return x
 
 # --- 3. Data loader (needs to be implemented) ---
 
