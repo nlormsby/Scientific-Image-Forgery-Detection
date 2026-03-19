@@ -323,7 +323,3 @@ Verifies whether both datasets use the same masking convention (source+copied vs
 If you use this code, please cite the datasets:
 - Kaggle Scientific Figure Forgery Dataset
 - BioFors: Biological Image Forgery Dataset
-
-## License
-
-[Add your license here]
