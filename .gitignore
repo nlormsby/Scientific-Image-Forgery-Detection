@@ -1,3 +1,6 @@
 # Dataset files
 Datasets/
-experiments/final_model_optimized/best_model.pth
+
+# Model checkpoints (large files)
+*.pth
+best_model.pth
