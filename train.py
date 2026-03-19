@@ -36,7 +36,7 @@ MULTI_MODEL_MODE = False
 # If MULTI_MODEL_MODE = True, define models to compare:
 MODELS_TO_COMPARE = [
     # ========================================================================
-    # PHASE 1: Architecture Comparison (All ResNet34) - COMPLETED
+    # STAGE 1: Architecture Comparison (All ResNet34) - COMPLETED
     # Winner: FPN (0.2141 IoU)
     # ========================================================================
     # {'name': 'smp_unet', 'model': lambda: smp.Unet(encoder_name='resnet34', encoder_weights='imagenet', in_channels=3, classes=1, activation=None)},
@@ -49,7 +49,7 @@ MODELS_TO_COMPARE = [
     # {'name': 'smp_pan', 'model': lambda: smp.PAN(encoder_name='resnet34', encoder_weights='imagenet', in_channels=3, classes=1, activation=None)},
 
     # ========================================================================
-    # PHASE 2: Backbone Comparison for FPN (Winner from Phase 1) - COMPLETED
+    # STAGE 2: Backbone Comparison for FPN (Winner from Stage 1) - COMPLETED
     # Winner: FPN + ResNeXt50 (0.2659 IoU)
     # ========================================================================
     # {'name': 'fpn_resnet34', 'model': lambda: smp.FPN(encoder_name='resnet34', encoder_weights='imagenet', in_channels=3, classes=1, activation=None)},
@@ -60,7 +60,7 @@ MODELS_TO_COMPARE = [
     # {'name': 'fpn_resnext50', 'model': lambda: smp.FPN(encoder_name='resnext50_32x4d', encoder_weights='imagenet', in_channels=3, classes=1, activation=None)},
 
     # ========================================================================
-    # PHASE 3: FPN Architecture Refinement (Ablation Studies) using ResNeXt50 backbone
+    # STAGE 3: FPN Architecture Refinement (Ablation Studies) using ResNeXt50 backbone
     # ========================================================================
 
     # # Baseline - Full FPN (all components enabled)
@@ -82,20 +82,20 @@ MODELS_TO_COMPARE = [
 # ============================================================================
 # SINGLE MODEL MODE (when MULTI_MODEL_MODE = False)
 # ============================================================================
-EXPERIMENT_NAME = "final_model_phase4_optimized"
+EXPERIMENT_NAME = "final_model_optimized"
 
 # Data
 DATA_DIR = "Datasets/unified"
 MAX_SAMPLES = None  # Use full dataset for final model training
 
-# Final optimized model from Phases 1-4:
-# - Phase 1 winner: FPN architecture
-# - Phase 2 winner: ResNeXt50 backbone
-# - Phase 3 insight: Top-down pathway is critical
-# - Phase 4 optimization: batch_size=2, optimizer=adam
+# Final optimized model from Stages 1-4:
+# - Stage 1 winner: FPN architecture
+# - Stage 2 winner: ResNeXt50 backbone
+# - Stage 3 insight: Top-down pathway is critical
+# - Stage 4 optimization: batch_size=2, optimizer=adam
 MODEL = smp.FPN(encoder_name='resnext50_32x4d', encoder_weights='imagenet', in_channels=3, classes=1, activation=None)
 
-# Training settings - OPTIMIZED FROM PHASE 4
+# Training settings - OPTIMIZED FROM STAGE 4
 EPOCHS = 30  # More epochs for full dataset training
 BATCH_SIZE = 2  # OPTIMIZED: Reduced from 4 (+19.7% improvement)
 LEARNING_RATE = 1e-4  # OPTIMIZED: Already optimal from baseline
